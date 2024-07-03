@@ -4,6 +4,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using Utils.Extensions;
 using Zenject;
 
 namespace SceneManagers
@@ -49,9 +50,13 @@ namespace SceneManagers
 
         private async void ConnectToServer()
         {
-            if (UsernameInput.text != null && PasswordInput.text != null)
+            if (!UsernameInput.text.IsNullOrBlank() && !PasswordInput.text.IsNullOrBlank())
             {
                 await _networkManager.LobbyNetwork.Connect(UsernameInput.text, PasswordInput.text);
+            }
+            else
+            {
+                UpdateStatusMessage("아이디와 비밀번호를 입력하여 주세요.");
             }
 
             if (_networkManager.LobbyNetwork.IsConnected)
