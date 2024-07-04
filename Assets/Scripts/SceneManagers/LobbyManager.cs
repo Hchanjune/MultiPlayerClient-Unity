@@ -1,4 +1,7 @@
+using System;
 using NetworkManagers;
+using NetworkManagers.Lobby;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -17,15 +20,28 @@ namespace SceneManagers
         
         // UI
         public Button LogoutBtn;
-        
-        void Start()
+
+        public TMP_Text CurrentUserCount;
+
+        private void Awake()
         {
             LogoutBtn.onClick.AddListener(OnLogout);
+            RegisterNetworkEvent();
+        }
+
+        void Start()
+        {
+            
         }
         
-        void Update()
+        private void RegisterNetworkEvent()
         {
-        
+            _networkManager.LobbyNetwork.Lobby.OnStateChange += OnStateChange;
+        }
+
+        private void OnStateChange(LobbyState state, bool isFirstState)
+        {
+            CurrentUserCount.text = $"현재 접속중인 사용자 : {state.clients.Count}";
         }
 
 

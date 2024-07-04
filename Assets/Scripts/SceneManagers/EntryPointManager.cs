@@ -41,9 +41,6 @@ namespace SceneManagers
         
         void Start()
         {
-            ColyseusClient client = new ColyseusClient("ws://localhost:3000");
-            _networkManager.RegisterClient(client);
-            
             ConnectBtn.onClick.AddListener(ConnectToServer);
             QuitBtn.onClick.AddListener(Quit);
         }
@@ -52,16 +49,15 @@ namespace SceneManagers
         {
             if (!UsernameInput.text.IsNullOrBlank() && !PasswordInput.text.IsNullOrBlank())
             {
-                await _networkManager.LobbyNetwork.Connect(UsernameInput.text, PasswordInput.text);
+                bool isConnected = await _networkManager.LobbyNetwork.Connect(UsernameInput.text, PasswordInput.text);
+                if (isConnected)
+                {
+                    SceneManager.LoadScene("Lobby");
+                }
             }
             else
             {
                 UpdateStatusMessage("아이디와 비밀번호를 입력하여 주세요.");
-            }
-
-            if (_networkManager.LobbyNetwork.IsConnected)
-            {
-                SceneManager.LoadScene("Lobby");
             }
         }
 

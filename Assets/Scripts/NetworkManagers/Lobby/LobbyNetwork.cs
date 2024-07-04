@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Colyseus;
 using SceneManagers;
 using UnityEngine;
+using Utils.Extensions;
 
 namespace NetworkManagers.Lobby
 {
@@ -24,11 +25,12 @@ namespace NetworkManagers.Lobby
 
     public class LobbyNetwork
     {
+        public event Action<ClientInfo> OnConnection;
         
-        public ColyseusRoom<object> Lobby;
+        public ColyseusRoom<LobbyState> Lobby;
         public bool IsConnected = false;
+        private TaskCompletionSource<bool> _connectionTask;
         private ColyseusClient _client;
-        private List<ColyseusRoomAvailable> allRooms = new List<ColyseusRoomAvailable>();
 
         public void InitializeClient(ColyseusClient client)
         {
@@ -39,59 +41,48 @@ namespace NetworkManagers.Lobby
         {
             try
             {
+                _connectionTask = new TaskCompletionSource<bool>();
                 Dictionary<string, object> options = new Dictionary<string, object>()
                 {
-                    ["username"] = username,
+                    ["id"] = username,
                     ["password"] = password
                 };
-                Lobby = await _client.JoinOrCreate("Lobby", options);
+                Lobby = await _client.JoinOrCreate<LobbyState>("Lobby", options);
+                Lobby.OnMessage<ClientInfo>("CONNECTED", OnConnected);
                 Lobby.OnMessage<string>("DUPLICATED_CONNECTION", OnDuplicatedConnection);
                 Lobby.OnMessage<string>("NOT_AUTHENTICATED", OnNotAuthenticated);
-                Lobby.OnMessage<List<ColyseusRoomAvailable>>("rooms", OnRoomsUpdate);
-                Lobby.OnMessage<ColyseusRoomAvailable>("+", OnRoomAdded);
-                Lobby.OnMessage<string>("-", OnRoomRemoved);
-                IsConnected = true;
-                return IsConnected;
+                return await _connectionTask.Task;
             }
             catch (Exception exception)
             {
                 Debug.LogError(exception);
                 EntryPointManager.Instance.UpdateStatusMessage("서버와의 연결상태가 좋지 않습니다.");
                 IsConnected = false;
-                return IsConnected;
+                return false;
             }
+        }
+
+        private void OnConnected(ClientInfo clientInfo)
+        {
+            Debug.Log(clientInfo.ToStringReflection());
+            IsConnected = true;
+            OnConnection?.Invoke(clientInfo);
+            _connectionTask.SetResult(true);
         }
 
         private void OnNotAuthenticated(string message)
         {
+            IsConnected = false;
             EntryPointManager.Instance.UpdateStatusMessage(message);
+            _connectionTask.SetResult(false);
         }
         
         private void OnDuplicatedConnection(string message)
         {
+            IsConnected = false;
             EntryPointManager.Instance.UpdateStatusMessage(message);
+            _connectionTask.SetResult(false);
         }
         
-        private void OnRoomsUpdate(List<ColyseusRoomAvailable> rooms)
-        {
-            allRooms = rooms;
-            foreach (var room in rooms)
-            {
-                Debug.Log(
-                    $"Room ID: {room.roomId}, Clients: {room.clients}, Max Clients: {room.maxClients}");
-            }
-        }
-
-        private void OnRoomAdded(ColyseusRoomAvailable room)
-        {
-            allRooms.Add(room);
-            Debug.Log($"Room Added - ID: {room.roomId}, Clients: {room.clients}, Max Clients: {room.maxClients}");
-        }
-
-        private void OnRoomRemoved(string roomId)
-        {
-            allRooms.RemoveAll(room => room.roomId == roomId);
-            Debug.Log($"Room Removed - ID: {roomId}");
-        }
     }
 }
