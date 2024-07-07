@@ -11,6 +11,9 @@ namespace SceneManagers
 {
     public class LobbyManager : MonoBehaviour
     {
+        public static LobbyManager Instance { get; private set; }
+        
+        
         private NetworkManager _networkManager;
         [Inject]
         public void Constructor(NetworkManager networkManager)
@@ -25,13 +28,21 @@ namespace SceneManagers
 
         private void Awake()
         {
+            if (Instance == null)
+            {
+                Instance = this;
+            }
+            else
+            {
+                Destroy(gameObject);
+            }
             LogoutBtn.onClick.AddListener(OnLogout);
             RegisterNetworkEvent();
         }
 
         void Start()
         {
-            
+            OnStateChange(_networkManager.LobbyNetwork.Lobby.State, true);
         }
         
         private void RegisterNetworkEvent()
