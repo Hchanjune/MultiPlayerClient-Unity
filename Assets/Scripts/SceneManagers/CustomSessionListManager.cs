@@ -93,22 +93,16 @@ namespace SceneManagers
 
         private void OnCreateRoomSubmit()
         {
-            Debug.Log(OptionRoomName.text);
-            //Debug.Log(_networkManager.ClientInfo.id??= "System");
-            Debug.Log(OptionMaxClient.value + 1);
-            Debug.Log(OptionIsPrivate.isOn);
-            Debug.Log(OptionPassword.text);
-            
             Dictionary<string, object> options = new Dictionary<string, object>()
             {
                 ["roomName"] = OptionRoomName.text,
-                //["roomOwner"] = _networkManager.ClientInfo.id??= "System",
+                ["roomOwner"] = _networkManager?.ClientInfo?.id?? "System",
                 ["maxClients"] = OptionMaxClient.value + 1,
                 ["isPrivate"] = OptionIsPrivate.isOn,
-                ["password"] = OptionPassword.text
+                ["password"] = OptionIsPrivate.isOn ? OptionPassword.text : ""
             };
-            
-            
+
+            if (_networkManager != null) _networkManager.LobbyNetwork.Lobby.Send("CREATE_CUSTOM_SESSION", options);
         }
         
         
