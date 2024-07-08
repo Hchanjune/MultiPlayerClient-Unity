@@ -22,6 +22,7 @@ namespace SceneManagers
         }
         
         // UI
+        public Button CustomSessionListBtn;
         public Button LogoutBtn;
 
         public TMP_Text CurrentUserCount;
@@ -36,6 +37,7 @@ namespace SceneManagers
             {
                 Destroy(gameObject);
             }
+            CustomSessionListBtn.onClick.AddListener(OnCustomSessionListBtnClicked);
             LogoutBtn.onClick.AddListener(OnLogout);
             RegisterNetworkEvent();
         }
@@ -59,6 +61,11 @@ namespace SceneManagers
         private void OnLogout()
         {
             _networkManager.Disconnect();
+        }
+
+        private void OnCustomSessionListBtnClicked()
+        {
+            SceneManager.LoadScene("CustomSessionList");
         }
         
     }
