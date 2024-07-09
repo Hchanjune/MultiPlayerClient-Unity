@@ -1,5 +1,6 @@
 ﻿using System;
 using NetworkManagers;
+using NetworkManagers.ChatRoom;
 using NetworkManagers.Lobby;
 using SceneManagers;
 using UnityEngine;
@@ -14,6 +15,7 @@ namespace DI
             //Debug.Log("DI Injection Initialized");
             Container.Bind<NetworkManager>().AsSingle();
             Container.Bind<LobbyNetwork>().AsSingle();
+            Container.Bind<ChatRoomNetwork>().AsSingle();
         }
     }
 }

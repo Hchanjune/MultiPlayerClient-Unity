@@ -8,7 +8,7 @@
 using Colyseus.Schema;
 using Action = System.Action;
 
-public partial class ChatRoomInfo : Schema {
+public partial class ChatRoomState : Schema {
 	[Type(0, "string")]
 	public string roomId = default(string);
 

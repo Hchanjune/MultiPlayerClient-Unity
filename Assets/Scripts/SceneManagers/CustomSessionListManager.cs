@@ -96,13 +96,13 @@ namespace SceneManagers
             Dictionary<string, object> options = new Dictionary<string, object>()
             {
                 ["roomName"] = OptionRoomName.text,
-                ["roomOwner"] = _networkManager?.ClientInfo?.id?? "System",
+                ["initialOwner"] = _networkManager?.ClientInfo?.id?? "DEBUG",
                 ["maxClients"] = OptionMaxClient.value + 1,
                 ["isPrivate"] = OptionIsPrivate.isOn,
                 ["password"] = OptionIsPrivate.isOn ? OptionPassword.text : ""
             };
 
-            if (_networkManager != null) _networkManager.LobbyNetwork.Lobby.Send("CREATE_CUSTOM_SESSION", options);
+            if (_networkManager != null) _networkManager.LobbyNetwork.CreateChatRoom(options);
         }
         
         
