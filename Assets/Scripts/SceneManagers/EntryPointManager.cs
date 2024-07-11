@@ -1,6 +1,7 @@
 using Colyseus;
 using NetworkManagers;
 using TMPro;
+using UnityEditor.Rendering;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -11,7 +12,6 @@ namespace SceneManagers
 {
     public class EntryPointManager : MonoBehaviour
     {
-        public static EntryPointManager Instance { get; private set; }
 
         private NetworkManager _networkManager;
         [Inject]
@@ -29,14 +29,7 @@ namespace SceneManagers
 
         void Awake()
         {
-            if (Instance == null)
-            {
-                Instance = this;
-            }
-            else
-            {
-                Destroy(gameObject);
-            }
+
         }
         
         void Start()
@@ -49,10 +42,10 @@ namespace SceneManagers
         {
             if (!UsernameInput.text.IsNullOrBlank() && !PasswordInput.text.IsNullOrBlank())
             {
-                bool isConnected = await _networkManager.LobbyNetwork.Connect(UsernameInput.text, PasswordInput.text);
+                bool isConnected = await _networkManager.LobbyNetwork.Connect(UsernameInput.text, PasswordInput.text, UpdateStatusMessage);
                 if (isConnected)
                 {
-                    SceneManager.LoadScene("Lobby");
+                    SceneManager.LoadSceneAsync("Lobby");
                 }
             }
             else

@@ -2017,7 +2017,7 @@ GameObject:
   - component: {fileID: 2112615333}
   - component: {fileID: 2112615334}
   m_Layer: 0
-  m_Name: Main
+  m_Name: Lobby
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2035,7 +2035,8 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 2120256690}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &2112615334
@@ -2151,7 +2152,7 @@ RectTransform:
   - {fileID: 479991718}
   - {fileID: 889841449}
   - {fileID: 1077047474}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 2112615333}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
@@ -2166,5 +2167,4 @@ SceneRoots:
   - {fileID: 2112615333}
   - {fileID: 454262301}
   - {fileID: 1034528105}
-  - {fileID: 2120256690}
   - {fileID: 631479231}

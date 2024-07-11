@@ -40,7 +40,7 @@ namespace NetworkManagers.Lobby
             _client = client;
         }
 
-        public async Task<bool> Connect(string username, string password)
+        public async Task<bool> Connect(string username, string password, Action<string> updateStatusMessage)
         {
             try
             {
@@ -52,16 +52,19 @@ namespace NetworkManagers.Lobby
                 };
                 Lobby = await _client.JoinOrCreate<LobbyState>("Lobby", options);
                 Lobby.OnMessage<ClientInfo>("CONNECTED", OnConnected);
-                Lobby.OnMessage<string>("DUPLICATED_CONNECTION", OnDuplicatedConnection);
-                Lobby.OnMessage<string>("NOT_AUTHENTICATED", OnNotAuthenticated);
+                Lobby.OnMessage<string>("DUPLICATED_CONNECTION", message => OnDuplicatedConnection(message, updateStatusMessage));
+                Lobby.OnMessage<string>("NOT_AUTHENTICATED", message => OnNotAuthenticated(message, updateStatusMessage));
                 Lobby.OnMessage<ColyseusMatchMakeResponse>("CHAT_ROOM_CREATED", OnChatRoomCreated);
+                Lobby.OnMessage<ColyseusMatchMakeResponse>("CHAT_ROOM_AUTHORIZED", OnJoinChatRoomAuthorized);
+                Lobby.OnMessage<string>("CHAT_ROOM_PASSWORD_ERROR", message => Debug.LogError(message));
+                Lobby.OnMessage<string>("CHAT_ROOM_FULL", message => Debug.LogError(message));
                 Lobby.OnMessage<string>("ERROR_MESSAGE", OnServerError);
                 return await _connectionTask.Task;
             }
             catch (Exception exception)
             {
                 Debug.LogError(exception);
-                EntryPointManager.Instance.UpdateStatusMessage("서버와의 연결상태가 좋지 않습니다.");
+                updateStatusMessage("서버와의 연결상태가 좋지 않습니다.");
                 IsConnected = false;
                 return false;
             }
@@ -80,21 +83,21 @@ namespace NetworkManagers.Lobby
             _connectionTask.SetResult(true);
         }
 
-        private void OnNotAuthenticated(string message)
+        private void OnNotAuthenticated(string message, Action<string> updateStatusMessage)
         {
             IsConnected = false;
-            EntryPointManager.Instance.UpdateStatusMessage(message);
+            updateStatusMessage(message);
             _connectionTask.SetResult(false);
         }
         
-        private void OnDuplicatedConnection(string message)
+        private void OnDuplicatedConnection(string message, Action<string> updateStatusMessage)
         {
             IsConnected = false;
-            EntryPointManager.Instance.UpdateStatusMessage(message);
+            updateStatusMessage(message);
             _connectionTask.SetResult(false);
         }
         
-        public void CreateChatRoom(Dictionary<string, object> roomOption)
+        public void CreateChatRoomRequest(Dictionary<string, object> roomOption)
         {
             Lobby.Send("CREATE_CUSTOM_CHAT_ROOM", roomOption);
         }
@@ -111,6 +114,32 @@ namespace NetworkManagers.Lobby
             catch (Exception e)
             {
                 Debug.LogError($"Failed to Create ChatRoom: {e.Message}");
+            }
+        }
+
+        public void JoinChatRoomRequest(Dictionary<string, object> joinOption)
+        {
+            Lobby.Send("JOIN_CUSTOM_CHAT_ROOM", joinOption);
+        }
+
+        private async void OnJoinChatRoomAuthorized(ColyseusMatchMakeResponse seatReservation)
+        {
+            try
+            {
+                ColyseusRoom<ChatRoomState> chatRoom = await _client.ConsumeSeatReservation<ChatRoomState>(seatReservation);
+                OnChatRoomJoined?.Invoke(chatRoom);
+                Debug.Log($"Joined chat room with sessionId: {chatRoom.RoomId}");
+                SceneManager.LoadScene("ChatRoom");
+            }
+            catch (InvalidCastException e)
+            {
+                Debug.LogError($"InvalidCastException: {e.Message}");
+                // 추가적인 디버깅 정보 출력
+                Debug.LogError($"Seat Reservation: {seatReservation}");
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Failed to Join ChatRoom: {e.Message}");
             }
         }
         

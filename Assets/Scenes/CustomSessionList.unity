@@ -2982,7 +2982,7 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 738709135}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
@@ -3161,7 +3161,7 @@ MonoBehaviour:
   m_Placeholder: {fileID: 0}
   m_ItemText: {fileID: 1872002616}
   m_ItemImage: {fileID: 0}
-  m_Value: 0
+  m_Value: 9
   m_Options:
     m_Options:
     - m_Text: "1\uC778"
@@ -3237,7 +3237,7 @@ GameObject:
   - component: {fileID: 824797820}
   - component: {fileID: 824797821}
   m_Layer: 0
-  m_Name: Main
+  m_Name: CustomSessionList
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

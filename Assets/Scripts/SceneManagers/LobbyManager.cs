@@ -1,6 +1,4 @@
-using System;
 using NetworkManagers;
-using NetworkManagers.Lobby;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -11,62 +9,82 @@ namespace SceneManagers
 {
     public class LobbyManager : MonoBehaviour
     {
-        public static LobbyManager Instance { get; private set; }
-        
-        
         private NetworkManager _networkManager;
+
         [Inject]
         public void Constructor(NetworkManager networkManager)
         {
             _networkManager = networkManager;
         }
-        
+
         // UI
         public Button CustomSessionListBtn;
         public Button LogoutBtn;
-
         public TMP_Text CurrentUserCount;
 
         private void Awake()
         {
-            if (Instance == null)
-            {
-                Instance = this;
-            }
+            if (CustomSessionListBtn != null)
+                CustomSessionListBtn.onClick.AddListener(OnCustomSessionListBtnClicked);
             else
-            {
-                Destroy(gameObject);
-            }
-            CustomSessionListBtn.onClick.AddListener(OnCustomSessionListBtnClicked);
-            LogoutBtn.onClick.AddListener(OnLogout);
-            RegisterNetworkEvent();
+                Debug.LogError("CustomSessionListBtn is not assigned.");
+
+            if (LogoutBtn != null)
+                LogoutBtn.onClick.AddListener(OnLogout);
+            else
+                Debug.LogError("LogoutBtn is not assigned.");
         }
 
         void Start()
         {
-            OnStateChange(_networkManager.LobbyNetwork.Lobby.State, true);
+            // RegisterNetworkEvent
+            RegisterNetworkEvent();
         }
         
+        private void OnDestroy()
+        {
+            _networkManager.LobbyNetwork.Lobby.OnStateChange -= OnLobbyStateChange;
+        }
+
         private void RegisterNetworkEvent()
         {
-            _networkManager.LobbyNetwork.Lobby.OnStateChange += OnStateChange;
+            _networkManager.LobbyNetwork.Lobby.OnStateChange += OnLobbyStateChange;
+
+            // RegisterNetworkEvent 후 즉시 상태 갱신
+            OnLobbyStateChange(_networkManager.LobbyNetwork.Lobby.State, true);
         }
 
-        private void OnStateChange(LobbyState state, bool isFirstState)
+        private void OnLobbyStateChange(LobbyState state, bool isFirstState)
         {
-            CurrentUserCount.text = $"현재 접속중인 사용자 : {state.clients.Count}";
+            Debug.Log($"OnStateChange called. Current scene: {SceneManager.GetActiveScene().name}, Manager scene: {gameObject.scene.name}");
+
+            if (SceneManager.GetActiveScene().name.Equals(gameObject.scene.name))
+            {
+                Debug.Log("OnLobbyStateChange");
+                OnCurrentUserCountChange(state.clients.Count);       
+            }
         }
 
+        private void OnCurrentUserCountChange(int count)
+        {
+            CurrentUserCount.text = $"현재 접속중인 사용자 : {count}";
+        }
 
         private void OnLogout()
         {
-            _networkManager.Disconnect();
+            if (_networkManager != null)
+            {
+                _networkManager.Disconnect();
+            }
+            else
+            {
+                Debug.LogError("NetworkManager is null.");
+            }
         }
 
         private void OnCustomSessionListBtnClicked()
         {
             SceneManager.LoadScene("CustomSessionList");
         }
-        
     }
 }

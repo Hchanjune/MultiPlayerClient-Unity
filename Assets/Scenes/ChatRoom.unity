@@ -133,7 +133,7 @@ GameObject:
   - component: {fileID: 224785025}
   - component: {fileID: 224785026}
   m_Layer: 0
-  m_Name: Main
+  m_Name: ChatRoom
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -151,7 +151,8 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1275263538}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &224785026
@@ -621,7 +622,7 @@ RectTransform:
   m_Children:
   - {fileID: 1834001917}
   - {fileID: 1123578808}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 224785025}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
@@ -1002,5 +1003,4 @@ SceneRoots:
   - {fileID: 224785025}
   - {fileID: 1643959822}
   - {fileID: 1246586853}
-  - {fileID: 1275263538}
   - {fileID: 1249386422}

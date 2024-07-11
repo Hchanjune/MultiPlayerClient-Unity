@@ -13,10 +13,6 @@ namespace SceneManagers
 {
     public class CustomSessionListManager : MonoBehaviour
     {
-    
-        public static CustomSessionListManager Instance { get; private set; }
-        
-        
         // UI
         public Button CreateSessionBtn;
 
@@ -48,15 +44,6 @@ namespace SceneManagers
     
         private void Awake()
         {
-            if (Instance == null)
-            {
-                Instance = this;
-            }
-            else
-            {
-                Destroy(gameObject);
-            }
-
             // Back To Lobby EventListener
             BackToLobbyBtn.onClick.AddListener(OnBackToLobbyBtnClicked);
             // Create Session Btn
@@ -73,15 +60,41 @@ namespace SceneManagers
             CancelCreateRoomBtn.onClick.AddListener(CloseRoomOptionModal);
             CancelCreateRoomIconBtn.onClick.AddListener(CloseRoomOptionModal);
             
-            // Register Network Event
-            RegisterNetworkEvent();
+            
         }
 
         private void Start()
         {
-            OnStateChange(_networkManager.LobbyNetwork.Lobby.State, true);
+            // Register Network Event
+            RegisterNetworkEvent();
         }
 
+        private void OnDestroy()
+        {
+            _networkManager.LobbyNetwork.Lobby.OnStateChange -= OnCustomSessionListStateChange;
+        }
+
+        
+        private void RegisterNetworkEvent()
+        {
+            _networkManager.LobbyNetwork.Lobby.OnStateChange += OnCustomSessionListStateChange;
+
+            // RegisterNetworkEvent 후 즉시 상태 갱신
+            OnCustomSessionListStateChange(_networkManager.LobbyNetwork.Lobby.State, true);
+        }
+
+        private void OnCustomSessionListStateChange(LobbyState state, bool isFirstState)
+        {
+            Debug.Log($"OnStateChange called. Current scene: {SceneManager.GetActiveScene().name}, Manager scene: {gameObject.scene.name}");
+            
+            if (SceneManager.GetActiveScene().name.Equals(gameObject.scene.name))
+            {
+                Debug.Log("OnCustomSessionListStateChange");
+                OnChatRoomCountChange(state.chatRooms.Count);
+                OnChatRoomListChange(state.chatRooms);                
+            }
+        }
+        
 
         private void OnBackToLobbyBtnClicked()
         {
@@ -116,19 +129,19 @@ namespace SceneManagers
                 ["password"] = OptionIsPrivate.isOn ? OptionPassword.text : ""
             };
 
-            if (_networkManager != null) _networkManager.LobbyNetwork.CreateChatRoom(options);
+            if (_networkManager != null) _networkManager.LobbyNetwork.CreateChatRoomRequest(options);
         }
 
-        private void RegisterNetworkEvent()
+
+        private void OnRoomItemClicked(ChatRoomInfo chatRoomInfo)
         {
-            _networkManager.LobbyNetwork.Lobby.OnStateChange += OnStateChange;
+            Dictionary<string, object> options = new Dictionary<string, object>()
+            {
+                ["roomId"] = chatRoomInfo.roomId
+            };
+            _networkManager.LobbyNetwork.JoinChatRoomRequest(options);
         }
 
-        private void OnStateChange(LobbyState state, bool isFirstState)
-        {
-            OnChatRoomCountChange(state.chatRooms.Count);
-            OnChatRoomListChange(state.chatRooms);
-        }
 
         private void OnChatRoomCountChange(int count)
         {
@@ -168,6 +181,7 @@ namespace SceneManagers
                 chatRoomButton.onClick.AddListener(() =>
                 {
                     Debug.Log($"Button for room {chatRoom.roomId} clicked");
+                    OnRoomItemClicked(chatRoom);
                 });
             }
         }

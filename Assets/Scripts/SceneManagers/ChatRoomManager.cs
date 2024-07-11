@@ -8,9 +8,6 @@ namespace SceneManagers
 {
     public class ChatRoomManager: MonoBehaviour
     {
-        public static ChatRoomManager Instance { get; private set; }
-        
-        
         // UI
         public Button ExitBtn;
         
@@ -24,15 +21,6 @@ namespace SceneManagers
 
         private void Awake()
         {
-            if (Instance == null)
-            {
-                Instance = this;
-            }
-            else
-            {
-                Destroy(gameObject);
-            }
-            
             ExitBtn.onClick.AddListener(OnExitBtnClicked);
         }
 
