@@ -85,13 +85,15 @@ namespace SceneManagers
 
         private void OnCustomSessionListStateChange(LobbyState state, bool isFirstState)
         {
+            
             Debug.Log($"OnStateChange called. Current scene: {SceneManager.GetActiveScene().name}, Manager scene: {gameObject.scene.name}");
+            Debug.Log($"Current ChatRooms: {state.chatRooms.Count}");
             
             if (SceneManager.GetActiveScene().name.Equals(gameObject.scene.name))
             {
                 Debug.Log("OnCustomSessionListStateChange");
                 OnChatRoomCountChange(state.chatRooms.Count);
-                OnChatRoomListChange(state.chatRooms);                
+                OnChatRoomListChange(state.chatRooms);
             }
         }
         
@@ -150,13 +152,22 @@ namespace SceneManagers
 
         private void OnChatRoomListChange(MapSchema<ChatRoomInfo> chatRooms)
         {
+            // 기존 리스트 정리
             foreach (Transform child in ChatRoomListScrollContent)
             {
                 Destroy(child.gameObject);
             }
-            
+    
+            // 새로운 리스트 생성
             foreach (ChatRoomInfo chatRoom in chatRooms.Values)
             {
+                // Null 참조 확인
+                if (chatRoom == null)
+                {
+                    Debug.LogError("ChatRoom is null");
+                    continue;
+                }
+
                 // Prefab 인스턴스 생성
                 GameObject chatRoomItem = Instantiate(ChatRoomItemPrefab, ChatRoomListScrollContent);
 
@@ -175,7 +186,8 @@ namespace SceneManagers
                 chatRoomId.text = chatRoom.roomId.ToString();
                 chatRoomName.text = chatRoom.roomName;
                 chatRoomOwner.text = chatRoom.roomOwner;
-                chatRoomCurrentClient.text = $"{chatRoom.players.Count}/{chatRoom.maxClients}";
+                int currentPlayersCount = chatRoom.players.Count == 0 ? 1 : chatRoom.players.Count;
+                chatRoomCurrentClient.text = $"{currentPlayersCount}/{chatRoom.maxClients}";
 
                 // Button 클릭 이벤트 추가
                 chatRoomButton.onClick.AddListener(() =>
