@@ -135,7 +135,7 @@ namespace SceneManagers
         }
 
 
-        private void OnRoomItemClicked(ChatRoomInfo chatRoomInfo)
+        private void OnRoomItemClicked(ChatRoomState chatRoomInfo)
         {
             Dictionary<string, object> options = new Dictionary<string, object>()
             {
@@ -150,7 +150,7 @@ namespace SceneManagers
             CurrentChatRoomCountText.text = $"{count}";
         }
 
-        private void OnChatRoomListChange(MapSchema<ChatRoomInfo> chatRooms)
+        private void OnChatRoomListChange(MapSchema<ChatRoomState> chatRooms)
         {
             // 기존 리스트 정리
             foreach (Transform child in ChatRoomListScrollContent)
@@ -159,7 +159,7 @@ namespace SceneManagers
             }
     
             // 새로운 리스트 생성
-            foreach (ChatRoomInfo chatRoom in chatRooms.Values)
+            foreach (ChatRoomState chatRoom in chatRooms.Values)
             {
                 // Null 참조 확인
                 if (chatRoom == null)
