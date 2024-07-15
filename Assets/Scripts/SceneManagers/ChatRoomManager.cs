@@ -58,12 +58,18 @@ namespace SceneManagers
         {
             OnChatRoomStateChange(_networkManager.ChatRoomNetwork.ChatRoom.State, true);
             _networkManager.ChatRoomNetwork.ChatRoom.OnStateChange += OnChatRoomStateChange;
-            Debug.Log("RegisterNetworkEvent: OnStateChange 이벤트가 등록되었습니다.");
+            //Debug.Log("RegisterNetworkEvent: OnStateChange 이벤트가 등록되었습니다.");
         }
 
         private void OnChatRoomStateChange(ChatRoomState state, bool isFirstState)
         {
-            Debug.Log("OnChatRoomStateChange");
+            Debug.Log($"OnChatRoomStateChange: State received. RoomName: {state.roomName}, IsPrivate: {state.isPrivate}");
+            Debug.Log($"Players: {state.players.Count}");
+
+            foreach (ChatRoomPlayer player in state.players.Values)
+            {
+                Debug.Log($"Player ID: {player.id}, Name: {player.name}");
+            }
             OnRoomTitleChange(state.roomName, state.isPrivate);
             OnRoomPlayerChange(state.players);
         }
