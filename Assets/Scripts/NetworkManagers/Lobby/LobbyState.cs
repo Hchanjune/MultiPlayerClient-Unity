@@ -15,8 +15,8 @@ public partial class LobbyState : Schema {
 	[Type(1, "map", typeof(MapSchema<ClientInfo>))]
 	public MapSchema<ClientInfo> clients = new MapSchema<ClientInfo>();
 
-	[Type(2, "map", typeof(MapSchema<ChatRoomState>))]
-	public MapSchema<ChatRoomState> chatRooms = new MapSchema<ChatRoomState>();
+	[Type(2, "map", typeof(MapSchema<ChatRoomInfo>))]
+	public MapSchema<ChatRoomInfo> chatRooms = new MapSchema<ChatRoomInfo>();
 
 	/*
 	 * Support for individual property change callbacks below...
@@ -46,8 +46,8 @@ public partial class LobbyState : Schema {
 		};
 	}
 
-	protected event PropertyChangeHandler<MapSchema<ChatRoomState>> __chatRoomsChange;
-	public Action OnChatRoomsChange(PropertyChangeHandler<MapSchema<ChatRoomState>> __handler, bool __immediate = true) {
+	protected event PropertyChangeHandler<MapSchema<ChatRoomInfo>> __chatRoomsChange;
+	public Action OnChatRoomsChange(PropertyChangeHandler<MapSchema<ChatRoomInfo>> __handler, bool __immediate = true) {
 		if (__callbacks == null) { __callbacks = new SchemaCallbacks(); }
 		__callbacks.AddPropertyCallback(nameof(this.chatRooms));
 		__chatRoomsChange += __handler;
@@ -62,7 +62,7 @@ public partial class LobbyState : Schema {
 		switch (change.Field) {
 			case nameof(initializedTimestamp): __initializedTimestampChange?.Invoke((string) change.Value, (string) change.PreviousValue); break;
 			case nameof(clients): __clientsChange?.Invoke((MapSchema<ClientInfo>) change.Value, (MapSchema<ClientInfo>) change.PreviousValue); break;
-			case nameof(chatRooms): __chatRoomsChange?.Invoke((MapSchema<ChatRoomState>) change.Value, (MapSchema<ChatRoomState>) change.PreviousValue); break;
+			case nameof(chatRooms): __chatRoomsChange?.Invoke((MapSchema<ChatRoomInfo>) change.Value, (MapSchema<ChatRoomInfo>) change.PreviousValue); break;
 			default: break;
 		}
 	}

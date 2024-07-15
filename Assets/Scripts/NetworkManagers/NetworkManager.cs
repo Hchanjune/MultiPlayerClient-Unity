@@ -2,6 +2,7 @@
 using Colyseus;
 using NetworkManagers.ChatRoom;
 using NetworkManagers.Lobby;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 using Zenject;
 

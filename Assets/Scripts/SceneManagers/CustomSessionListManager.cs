@@ -77,24 +77,15 @@ namespace SceneManagers
         
         private void RegisterNetworkEvent()
         {
-            _networkManager.LobbyNetwork.Lobby.OnStateChange += OnCustomSessionListStateChange;
-
-            // RegisterNetworkEvent 후 즉시 상태 갱신
             OnCustomSessionListStateChange(_networkManager.LobbyNetwork.Lobby.State, true);
+            _networkManager.LobbyNetwork.Lobby.OnStateChange += OnCustomSessionListStateChange;
         }
 
         private void OnCustomSessionListStateChange(LobbyState state, bool isFirstState)
         {
-            
-            Debug.Log($"OnStateChange called. Current scene: {SceneManager.GetActiveScene().name}, Manager scene: {gameObject.scene.name}");
-            Debug.Log($"Current ChatRooms: {state.chatRooms.Count}");
-            
-            if (SceneManager.GetActiveScene().name.Equals(gameObject.scene.name))
-            {
                 Debug.Log("OnCustomSessionListStateChange");
                 OnChatRoomCountChange(state.chatRooms.Count);
                 OnChatRoomListChange(state.chatRooms);
-            }
         }
         
 
@@ -135,7 +126,7 @@ namespace SceneManagers
         }
 
 
-        private void OnRoomItemClicked(ChatRoomState chatRoomInfo)
+        private void OnRoomItemClicked(ChatRoomInfo chatRoomInfo)
         {
             Dictionary<string, object> options = new Dictionary<string, object>()
             {
@@ -150,7 +141,7 @@ namespace SceneManagers
             CurrentChatRoomCountText.text = $"{count}";
         }
 
-        private void OnChatRoomListChange(MapSchema<ChatRoomState> chatRooms)
+        private void OnChatRoomListChange(MapSchema<ChatRoomInfo> chatRooms)
         {
             // 기존 리스트 정리
             foreach (Transform child in ChatRoomListScrollContent)
@@ -159,7 +150,7 @@ namespace SceneManagers
             }
     
             // 새로운 리스트 생성
-            foreach (ChatRoomState chatRoom in chatRooms.Values)
+            foreach (ChatRoomInfo chatRoom in chatRooms.Values)
             {
                 // Null 참조 확인
                 if (chatRoom == null)
@@ -186,13 +177,11 @@ namespace SceneManagers
                 chatRoomId.text = chatRoom.roomId.ToString();
                 chatRoomName.text = chatRoom.roomName;
                 chatRoomOwner.text = chatRoom.roomOwner;
-                int currentPlayersCount = chatRoom.players.Count == 0 ? 1 : chatRoom.players.Count;
-                chatRoomCurrentClient.text = $"{currentPlayersCount}/{chatRoom.maxClients}";
+                chatRoomCurrentClient.text = $"{chatRoom.players.Count}/{chatRoom.maxClients}";
 
                 // Button 클릭 이벤트 추가
                 chatRoomButton.onClick.AddListener(() =>
                 {
-                    Debug.Log($"Button for room {chatRoom.roomId} clicked");
                     OnRoomItemClicked(chatRoom);
                 });
             }

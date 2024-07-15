@@ -48,21 +48,14 @@ namespace SceneManagers
 
         private void RegisterNetworkEvent()
         {
-            _networkManager.LobbyNetwork.Lobby.OnStateChange += OnLobbyStateChange;
-
-            // RegisterNetworkEvent 후 즉시 상태 갱신
             OnLobbyStateChange(_networkManager.LobbyNetwork.Lobby.State, true);
+            _networkManager.LobbyNetwork.Lobby.OnStateChange += OnLobbyStateChange;
         }
 
         private void OnLobbyStateChange(LobbyState state, bool isFirstState)
         {
-            Debug.Log($"OnStateChange called. Current scene: {SceneManager.GetActiveScene().name}, Manager scene: {gameObject.scene.name}");
-
-            if (SceneManager.GetActiveScene().name.Equals(gameObject.scene.name))
-            {
                 Debug.Log("OnLobbyStateChange");
-                OnCurrentUserCountChange(state.clients.Count);       
-            }
+                OnCurrentUserCountChange(state.clients.Count);
         }
 
         private void OnCurrentUserCountChange(int count)
