@@ -138,11 +138,13 @@ namespace SceneManagers
 
         private void OnChatRoomCountChange(int count)
         {
+            Debug.Log("OnChatRoomCountChange");
             CurrentChatRoomCountText.text = $"{count}";
         }
 
         private void OnChatRoomListChange(MapSchema<ChatRoomInfo> chatRooms)
         {
+            Debug.Log("OnChatRoomListChange");
             // 기존 리스트 정리
             foreach (Transform child in ChatRoomListScrollContent)
             {
@@ -177,7 +179,7 @@ namespace SceneManagers
                 chatRoomId.text = chatRoom.roomId.ToString();
                 chatRoomName.text = chatRoom.roomName;
                 chatRoomOwner.text = chatRoom.roomOwner;
-                chatRoomCurrentClient.text = $"{chatRoom.players.Count}/{chatRoom.maxClients}";
+                chatRoomCurrentClient.text = $"{chatRoom.currentPlayers}/{chatRoom.maxClients}";
 
                 // Button 클릭 이벤트 추가
                 chatRoomButton.onClick.AddListener(() =>

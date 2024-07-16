@@ -21,6 +21,9 @@ public partial class ChatRoomPlayer : Schema {
 	[Type(3, "string")]
 	public string name = default(string);
 
+	[Type(4, "string")]
+	public string team = default(string);
+
 	/*
 	 * Support for individual property change callbacks below...
 	 */
@@ -73,12 +76,25 @@ public partial class ChatRoomPlayer : Schema {
 		};
 	}
 
+	protected event PropertyChangeHandler<string> __teamChange;
+	public Action OnTeamChange(PropertyChangeHandler<string> __handler, bool __immediate = true) {
+		if (__callbacks == null) { __callbacks = new SchemaCallbacks(); }
+		__callbacks.AddPropertyCallback(nameof(this.team));
+		__teamChange += __handler;
+		if (__immediate && this.team != default(string)) { __handler(this.team, default(string)); }
+		return () => {
+			__callbacks.RemovePropertyCallback(nameof(team));
+			__teamChange -= __handler;
+		};
+	}
+
 	protected override void TriggerFieldChange(DataChange change) {
 		switch (change.Field) {
 			case nameof(lobbySessionId): __lobbySessionIdChange?.Invoke((string) change.Value, (string) change.PreviousValue); break;
 			case nameof(sessionId): __sessionIdChange?.Invoke((string) change.Value, (string) change.PreviousValue); break;
 			case nameof(id): __idChange?.Invoke((string) change.Value, (string) change.PreviousValue); break;
 			case nameof(name): __nameChange?.Invoke((string) change.Value, (string) change.PreviousValue); break;
+			case nameof(team): __teamChange?.Invoke((string) change.Value, (string) change.PreviousValue); break;
 			default: break;
 		}
 	}

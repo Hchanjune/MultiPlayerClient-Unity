@@ -28,9 +28,15 @@ public partial class ChatRoomState : Schema {
 	public string password = default(string);
 
 	[Type(6, "map", typeof(MapSchema<ChatRoomPlayer>))]
-	public MapSchema<ChatRoomPlayer> players = new MapSchema<ChatRoomPlayer>();
+	public MapSchema<ChatRoomPlayer> chatRoomPlayers = new MapSchema<ChatRoomPlayer>();
 
-	[Type(7, "boolean")]
+	[Type(7, "array", typeof(ArraySchema<ChatRoomPlayer>))]
+	public ArraySchema<ChatRoomPlayer> redTeam = new ArraySchema<ChatRoomPlayer>();
+
+	[Type(8, "array", typeof(ArraySchema<ChatRoomPlayer>))]
+	public ArraySchema<ChatRoomPlayer> blackTeam = new ArraySchema<ChatRoomPlayer>();
+
+	[Type(9, "boolean")]
 	public bool isPlaying = default(bool);
 
 	/*
@@ -109,15 +115,39 @@ public partial class ChatRoomState : Schema {
 		};
 	}
 
-	protected event PropertyChangeHandler<MapSchema<ChatRoomPlayer>> __playersChange;
-	public Action OnPlayersChange(PropertyChangeHandler<MapSchema<ChatRoomPlayer>> __handler, bool __immediate = true) {
+	protected event PropertyChangeHandler<MapSchema<ChatRoomPlayer>> __chatRoomPlayersChange;
+	public Action OnChatRoomPlayersChange(PropertyChangeHandler<MapSchema<ChatRoomPlayer>> __handler, bool __immediate = true) {
 		if (__callbacks == null) { __callbacks = new SchemaCallbacks(); }
-		__callbacks.AddPropertyCallback(nameof(this.players));
-		__playersChange += __handler;
-		if (__immediate && this.players != null) { __handler(this.players, null); }
+		__callbacks.AddPropertyCallback(nameof(this.chatRoomPlayers));
+		__chatRoomPlayersChange += __handler;
+		if (__immediate && this.chatRoomPlayers != null) { __handler(this.chatRoomPlayers, null); }
 		return () => {
-			__callbacks.RemovePropertyCallback(nameof(players));
-			__playersChange -= __handler;
+			__callbacks.RemovePropertyCallback(nameof(chatRoomPlayers));
+			__chatRoomPlayersChange -= __handler;
+		};
+	}
+
+	protected event PropertyChangeHandler<ArraySchema<ChatRoomPlayer>> __redTeamChange;
+	public Action OnRedTeamChange(PropertyChangeHandler<ArraySchema<ChatRoomPlayer>> __handler, bool __immediate = true) {
+		if (__callbacks == null) { __callbacks = new SchemaCallbacks(); }
+		__callbacks.AddPropertyCallback(nameof(this.redTeam));
+		__redTeamChange += __handler;
+		if (__immediate && this.redTeam != null) { __handler(this.redTeam, null); }
+		return () => {
+			__callbacks.RemovePropertyCallback(nameof(redTeam));
+			__redTeamChange -= __handler;
+		};
+	}
+
+	protected event PropertyChangeHandler<ArraySchema<ChatRoomPlayer>> __blackTeamChange;
+	public Action OnBlackTeamChange(PropertyChangeHandler<ArraySchema<ChatRoomPlayer>> __handler, bool __immediate = true) {
+		if (__callbacks == null) { __callbacks = new SchemaCallbacks(); }
+		__callbacks.AddPropertyCallback(nameof(this.blackTeam));
+		__blackTeamChange += __handler;
+		if (__immediate && this.blackTeam != null) { __handler(this.blackTeam, null); }
+		return () => {
+			__callbacks.RemovePropertyCallback(nameof(blackTeam));
+			__blackTeamChange -= __handler;
 		};
 	}
 
@@ -141,7 +171,9 @@ public partial class ChatRoomState : Schema {
 			case nameof(maxClients): __maxClientsChange?.Invoke((byte) change.Value, (byte) change.PreviousValue); break;
 			case nameof(isPrivate): __isPrivateChange?.Invoke((bool) change.Value, (bool) change.PreviousValue); break;
 			case nameof(password): __passwordChange?.Invoke((string) change.Value, (string) change.PreviousValue); break;
-			case nameof(players): __playersChange?.Invoke((MapSchema<ChatRoomPlayer>) change.Value, (MapSchema<ChatRoomPlayer>) change.PreviousValue); break;
+			case nameof(chatRoomPlayers): __chatRoomPlayersChange?.Invoke((MapSchema<ChatRoomPlayer>) change.Value, (MapSchema<ChatRoomPlayer>) change.PreviousValue); break;
+			case nameof(redTeam): __redTeamChange?.Invoke((ArraySchema<ChatRoomPlayer>) change.Value, (ArraySchema<ChatRoomPlayer>) change.PreviousValue); break;
+			case nameof(blackTeam): __blackTeamChange?.Invoke((ArraySchema<ChatRoomPlayer>) change.Value, (ArraySchema<ChatRoomPlayer>) change.PreviousValue); break;
 			case nameof(isPlaying): __isPlayingChange?.Invoke((bool) change.Value, (bool) change.PreviousValue); break;
 			default: break;
 		}

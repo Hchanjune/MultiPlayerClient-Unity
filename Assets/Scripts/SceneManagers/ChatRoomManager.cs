@@ -1,11 +1,14 @@
 ﻿using System;
+using System.Collections;
 using Colyseus.Schema;
 using NetworkManagers;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
+using Utils.Extensions;
 using Zenject;
 
 namespace SceneManagers
@@ -29,8 +32,6 @@ namespace SceneManagers
         // UI - ReadyPanel
         public Button ReadyBtn;
 
-        public TMP_Text DebugMessage;
-
         private NetworkManager _networkManager;
 
         [Inject]
@@ -41,6 +42,8 @@ namespace SceneManagers
 
         private void Awake()
         {
+            ChatMessageInput.onSubmit.AddListener(SendChatMessage);
+            ChatMessageSubmitBtn.onClick.AddListener(SendChatMessage);
             ExitBtn.onClick.AddListener(OnExitBtnClicked);
         }
 
@@ -56,22 +59,23 @@ namespace SceneManagers
 
         private void RegisterNetworkEvent()
         {
+
             OnChatRoomStateChange(_networkManager.ChatRoomNetwork.ChatRoom.State, true);
             _networkManager.ChatRoomNetwork.ChatRoom.OnStateChange += OnChatRoomStateChange;
-            //Debug.Log("RegisterNetworkEvent: OnStateChange 이벤트가 등록되었습니다.");
+            
+            // OnMessages
+            _networkManager.ChatRoomNetwork.ChatRoom.OnMessage<ChatMessage>("ECHO_CHAT_MESSAGE", OnChatMessageEcho);
+            _networkManager.ChatRoomNetwork.ChatRoom.OnMessage<ChatMessage>("PLAYER_JOINED", OnSystemMessage);
+            _networkManager.ChatRoomNetwork.ChatRoom.OnMessage<ChatMessage>("PLAYER_LEAVED", OnSystemMessage);
+            _networkManager.ChatRoomNetwork.ChatRoom.OnMessage<ChatMessage>("OWNER_CHANGED", OnSystemMessage);
         }
+        
 
         private void OnChatRoomStateChange(ChatRoomState state, bool isFirstState)
         {
-            Debug.Log($"OnChatRoomStateChange: State received. RoomName: {state.roomName}, IsPrivate: {state.isPrivate}");
-            Debug.Log($"Players: {state.players.Count}");
-
-            foreach (ChatRoomPlayer player in state.players.Values)
-            {
-                Debug.Log($"Player ID: {player.id}, Name: {player.name}");
-            }
             OnRoomTitleChange(state.roomName, state.isPrivate);
-            OnRoomPlayerChange(state.players);
+            OnRoomPlayerChange(state);
+            SetReadyBtnState(state.roomOwner);
         }
 
         private void OnRoomTitleChange(string roomName, bool isPrivate)
@@ -79,17 +83,66 @@ namespace SceneManagers
             RoomTitleText.text = $"{(isPrivate ? "[비공개]" : "[공개]")} - {roomName}";
         }
 
-        private void OnRoomPlayerChange(MapSchema<ChatRoomPlayer> players)
+        private void SetReadyBtnState(string roomOwner)
+        { 
+            ReadyBtn.GetComponentInChildren<TMP_Text>().text = (roomOwner == _networkManager.ClientInfo.id) ? "시작" : "준비";                
+        }
+
+        private void OnChatMessageEcho(ChatMessage message)
         {
-            // RedTeamPlayerList와 BlackTeamPlayerList가 null인지 확인
-            if (RedTeamPlayerList == null || BlackTeamPlayerList == null)
+            GameObject chatObject = new GameObject();
+            chatObject.transform.SetParent(ChatMessageScrollContent);
+            TextMeshProUGUI chat = chatObject.AddComponent<TextMeshProUGUI>();
+            chat.text = $"{message.senderId}: {message.message}";
+            chat.fontSize = 24;
+            chat.color = Color.black;
+            StartCoroutine(ChatAreaAutoScroll(ChatMessageScrollContent.GetComponentInParent<ScrollRect>()));
+        }
+
+        private void OnSystemMessage(ChatMessage message)
+        {
+            GameObject chatObject = new GameObject();
+            chatObject.transform.SetParent(ChatMessageScrollContent);
+            TextMeshProUGUI chat = chatObject.AddComponent<TextMeshProUGUI>();
+            chat.text = $"{message.senderId}: {message.message}";
+            chat.fontSize = 24;
+            chat.color = Color.black;
+            StartCoroutine(ChatAreaAutoScroll(ChatMessageScrollContent.GetComponentInParent<ScrollRect>()));
+        }
+
+        private IEnumerator ChatAreaAutoScroll(ScrollRect scrollRect)
+        {
+            yield return new WaitForEndOfFrame();
+            Canvas.ForceUpdateCanvases();
+            scrollRect.verticalNormalizedPosition = 0;
+        }
+        
+        private void SendChatMessage(string message)
+        {
+            if (!message.IsNullOrBlank())
             {
-                Debug.LogWarning("RedTeamPlayerList 또는 BlackTeamPlayerList가 null입니다.");
-                return;
+                _networkManager.ChatRoomNetwork.ChatRoom.Send("CHAT_REQUEST", message);
+                ChatMessageInput.text = "";
+                ChatMessageInput.Select();
+                ChatMessageInput.ActivateInputField();
             }
+        }
+    
+        private void SendChatMessage()
+        {
+            string message = ChatMessageInput.text;
+            if (!message.IsNullOrBlank())
+            {
+                _networkManager.ChatRoomNetwork.ChatRoom.Send("CHAT_REQUEST", message);
+                ChatMessageInput.text = "";
+                ChatMessageInput.Select();
+                ChatMessageInput.ActivateInputField();
+            }
+        }
 
-            Debug.Log("OnRoomPlayerChange: 플레이어 목록이 변경되었습니다.");
-
+        private void OnRoomPlayerChange(ChatRoomState state)
+        {
+            // 기존 플레이어 리스트 정리
             foreach (Transform child in RedTeamPlayerList)
             {
                 Destroy(child.gameObject);
@@ -100,25 +153,29 @@ namespace SceneManagers
                 Destroy(child.gameObject);
             }
 
-            foreach (ChatRoomPlayer player in players.Values)
+            // RED
+            state.redTeam.ForEach((player) =>
             {
-                // 새로운 GameObject를 생성
                 GameObject textObject = new GameObject(player.id);
-
-                // 부모를 설정하여 계층 구조를 유지
                 textObject.transform.SetParent(RedTeamPlayerList, false);
-
-                // TextMeshProUGUI 컴포넌트를 추가
                 TextMeshProUGUI tmpText = textObject.AddComponent<TextMeshProUGUI>();
-
-                // 텍스트 설정
-                tmpText.text = player.id;
-
-                // 추가적인 설정 (선택 사항)
+                tmpText.text = state.roomOwner.Equals(player.id) ? $"[*]{player.id}" : player.id;
                 tmpText.fontSize = 24;
                 tmpText.color = Color.black;
                 tmpText.alignment = TextAlignmentOptions.Center;
-            }
+            });
+            
+            // BLACK
+            state.blackTeam.ForEach((player) =>
+            {
+                GameObject textObject = new GameObject(player.id);
+                textObject.transform.SetParent(BlackTeamPlayerList, false);
+                TextMeshProUGUI tmpText = textObject.AddComponent<TextMeshProUGUI>();
+                tmpText.text = state.roomOwner.Equals(player.id) ? $"[*]{player.id}" : player.id;
+                tmpText.fontSize = 24;
+                tmpText.color = Color.black;
+                tmpText.alignment = TextAlignmentOptions.Center;
+            });
         }
 
         private void OnExitBtnClicked()
