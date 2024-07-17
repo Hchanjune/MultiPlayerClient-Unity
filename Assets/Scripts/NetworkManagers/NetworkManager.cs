@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+﻿using System;
 using Colyseus;
 using NetworkManagers.ChatRoom;
 using NetworkManagers.Lobby;
@@ -30,8 +30,9 @@ namespace NetworkManagers
             LobbyNetwork = lobbyNetwork;
             LobbyNetwork.OnConnection += RegisterClientInfo;
             LobbyNetwork.InitializeClient(Client);
+            LobbyNetwork.OnDisconnection += OnDisconnection;
         }
-
+        
         private void InitializeChatRoomNetwork(ChatRoomNetwork chatRoomNetwork)
         {
             ChatRoomNetwork = chatRoomNetwork;
@@ -48,13 +49,22 @@ namespace NetworkManagers
             ChatRoomNetwork.ChatRoom = chatRoom;
         }
 
+        private void OnDisconnection(int closeCode)
+        {
+            Debug.Log(closeCode);
+        }
+        
         public void Disconnect()
         {
-            LobbyNetwork.Lobby.Leave();
+            if (LobbyNetwork.Lobby != null)
+            {
+                LobbyNetwork.Lobby.Leave();
+            }
             Client = null;
             ClientInfo = null;
             SceneManager.LoadScene("EntryPoint");
         }
+        
         
     
     }

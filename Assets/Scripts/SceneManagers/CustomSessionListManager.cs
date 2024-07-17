@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Colyseus.Schema;
 using NetworkManagers;
 using TMPro;
@@ -22,7 +23,7 @@ namespace SceneManagers
         
         public Transform ChatRoomListScrollContent;
         public GameObject ChatRoomItemPrefab;
-
+        
         // Create Option Modal
         public GameObject RoomOptionModal;
         public Button CancelCreateRoomBtn;
@@ -34,6 +35,19 @@ namespace SceneManagers
         public GameObject OptionPasswordArea;
         public TMP_InputField OptionPassword;
         
+        // Enter Modal
+        public GameObject RoomEnterModal;
+        public TMP_InputField RoomEnterPassword;
+        public Button SubmitRoomPassword;
+        public Button CancelRoomPassword;
+        public Button CancelRoomPasswordIconBtn;
+        public TMP_Text RoomEnterModalStatusMessage;
+        
+        // Deny Modal
+        public GameObject RoomDeniedModal;
+        public TMP_Text RoomDeniedModalStatusMessage;
+        public Button ConfirmRoomDeniedModal;
+        public Button ConfirmRoomDeniedModalIcon;
         
         private NetworkManager _networkManager;
         [Inject]
@@ -60,6 +74,16 @@ namespace SceneManagers
             CancelCreateRoomBtn.onClick.AddListener(CloseRoomOptionModal);
             CancelCreateRoomIconBtn.onClick.AddListener(CloseRoomOptionModal);
             
+            // Enter Modal Events
+            CloseRoomEnterModal();
+            // Submit Event On Func
+            CancelRoomPassword.onClick.AddListener(CloseRoomEnterModal);
+            CancelRoomPasswordIconBtn.onClick.AddListener(CloseRoomEnterModal);
+            
+            // Denied Modal Events
+            CloseDeniedModal();
+            ConfirmRoomDeniedModal.onClick.AddListener(CloseDeniedModal);
+            ConfirmRoomDeniedModalIcon.onClick.AddListener(CloseDeniedModal);
             
         }
 
@@ -72,6 +96,8 @@ namespace SceneManagers
         private void OnDestroy()
         {
             _networkManager.LobbyNetwork.Lobby.OnStateChange -= OnCustomSessionListStateChange;
+            _networkManager.LobbyNetwork.OnChatRoomPasswordError -= OnPrivateRoomPasswordError;
+            _networkManager.LobbyNetwork.OnChatRoomFull -= OnTargetRoomFull;
         }
 
         
@@ -79,11 +105,12 @@ namespace SceneManagers
         {
             OnCustomSessionListStateChange(_networkManager.LobbyNetwork.Lobby.State, true);
             _networkManager.LobbyNetwork.Lobby.OnStateChange += OnCustomSessionListStateChange;
+            _networkManager.LobbyNetwork.OnChatRoomPasswordError += OnPrivateRoomPasswordError;
+            _networkManager.LobbyNetwork.OnChatRoomFull += OnTargetRoomFull;
         }
 
         private void OnCustomSessionListStateChange(LobbyState state, bool isFirstState)
         {
-                Debug.Log("OnCustomSessionListStateChange");
                 OnChatRoomCountChange(state.chatRooms.Count);
                 OnChatRoomListChange(state.chatRooms);
         }
@@ -117,16 +144,15 @@ namespace SceneManagers
             {
                 ["roomName"] = OptionRoomName.text,
                 ["initialOwner"] = _networkManager?.ClientInfo?.id?? "DEBUG",
-                ["maxClients"] = OptionMaxClient.value + 1,
+                ["maxClients"] = int.Parse(new string(OptionMaxClient.options[OptionMaxClient.value].text.Where(char.IsDigit).ToArray())),
                 ["isPrivate"] = OptionIsPrivate.isOn,
                 ["password"] = OptionIsPrivate.isOn ? OptionPassword.text : ""
             };
 
             if (_networkManager != null) _networkManager.LobbyNetwork.CreateChatRoomRequest(options);
         }
-
-
-        private void OnRoomItemClicked(ChatRoomInfo chatRoomInfo)
+        
+        private void OnPublicRoomItemClicked(ChatRoomInfo chatRoomInfo)
         {
             Dictionary<string, object> options = new Dictionary<string, object>()
             {
@@ -135,57 +161,115 @@ namespace SceneManagers
             _networkManager.LobbyNetwork.JoinChatRoomRequest(options);
         }
 
+        private void OnPrivateRoomItemClicked(ChatRoomInfo chatRoomInfo)
+        {
+            if (chatRoomInfo.currentPlayers >= chatRoomInfo.maxClients)
+            {
+                OnTargetRoomFull("참여가능 인원 수를 초과 하였습니다.");                
+            }
+            else
+            {
+                OpenRoomEnterModal(chatRoomInfo);                
+            }
+        }
 
+        private void OpenRoomEnterModal(ChatRoomInfo chatRoomInfo)
+        {
+            RoomEnterModal.SetActive(true);
+            SetInteractable(false);
+            SubmitRoomPassword.onClick.AddListener(()=>{ OnPrivateRoomJoinRequest(chatRoomInfo);});
+        }
+
+        private void CloseRoomEnterModal()
+        {
+            RoomEnterModal.SetActive(false);
+            SetInteractable(true);
+            RoomEnterPassword.text = "";
+            RoomEnterModalStatusMessage.text = "";
+            SubmitRoomPassword.onClick.RemoveAllListeners();
+        }
+
+        private void OnPrivateRoomJoinRequest(ChatRoomInfo chatRoomInfo)
+        {
+            Dictionary<string, object> options = new Dictionary<string, object>()
+            {
+                ["roomId"] = chatRoomInfo.roomId,
+                ["password"] = RoomEnterPassword.text
+            };
+            _networkManager.LobbyNetwork.JoinChatRoomRequest(options);
+        }
+
+        private void OnPrivateRoomPasswordError(string message)
+        {
+            RoomEnterModalStatusMessage.text = message;
+        }
+
+        private void OnTargetRoomFull(string message)
+        {
+            if (RoomEnterModal.activeSelf)
+            {
+                RoomEnterModalStatusMessage.text = message;
+            }
+            else
+            {
+                OpenDeniedModal(message);
+            }
+            
+        }
+
+        private void OpenDeniedModal(string text = "")
+        {
+            RoomDeniedModal.SetActive(true);
+            SetInteractable(false);
+            RoomDeniedModalStatusMessage.text = text;
+        }
+
+        private void CloseDeniedModal()
+        {
+            RoomDeniedModal.SetActive(false);
+            SetInteractable(true);
+            RoomDeniedModalStatusMessage.text = "";
+        }
+        
         private void OnChatRoomCountChange(int count)
         {
-            Debug.Log("OnChatRoomCountChange");
             CurrentChatRoomCountText.text = $"{count}";
         }
 
         private void OnChatRoomListChange(MapSchema<ChatRoomInfo> chatRooms)
         {
-            Debug.Log("OnChatRoomListChange");
-            // 기존 리스트 정리
             foreach (Transform child in ChatRoomListScrollContent)
             {
                 Destroy(child.gameObject);
             }
-    
-            // 새로운 리스트 생성
+            
             foreach (ChatRoomInfo chatRoom in chatRooms.Values)
             {
-                // Null 참조 확인
-                if (chatRoom == null)
+                if (chatRoom.isPlaying)
                 {
-                    Debug.LogError("ChatRoom is null");
                     continue;
                 }
-
-                // Prefab 인스턴스 생성
+                
                 GameObject chatRoomItem = Instantiate(ChatRoomItemPrefab, ChatRoomListScrollContent);
-
-                // Button 컴포넌트 가져오기
                 Button chatRoomButton = chatRoomItem.GetComponent<Button>();
-
-                // TMP_Text 컴포넌트들 가져오기
                 TMP_Text chatRoomIsPrivate = chatRoomItem.transform.Find("Text-RoomIsPrivate").GetComponent<TMP_Text>();
                 TMP_Text chatRoomId = chatRoomItem.transform.Find("Text-RoomId").GetComponent<TMP_Text>();
                 TMP_Text chatRoomName = chatRoomItem.transform.Find("Text-RoomName").GetComponent<TMP_Text>();
                 TMP_Text chatRoomOwner = chatRoomItem.transform.Find("Text-RoomOwner").GetComponent<TMP_Text>();
                 TMP_Text chatRoomCurrentClient = chatRoomItem.transform.Find("Text-CurrentClient").GetComponent<TMP_Text>();
-
-                // TMP_Text 컴포넌트들에 데이터 설정
                 chatRoomIsPrivate.text = chatRoom.isPrivate ? "Private" : "Public";
                 chatRoomId.text = chatRoom.roomId.ToString();
                 chatRoomName.text = chatRoom.roomName;
                 chatRoomOwner.text = chatRoom.roomOwner;
                 chatRoomCurrentClient.text = $"{chatRoom.currentPlayers}/{chatRoom.maxClients}";
-
-                // Button 클릭 이벤트 추가
-                chatRoomButton.onClick.AddListener(() =>
+                if (chatRoom.isPrivate)
                 {
-                    OnRoomItemClicked(chatRoom);
-                });
+                    chatRoomButton.onClick.AddListener(() => { OnPrivateRoomItemClicked(chatRoom); });
+                }
+                else
+                {
+                    chatRoomButton.onClick.AddListener(() => { OnPublicRoomItemClicked(chatRoom); });
+                }
             }
         }
 
@@ -194,14 +278,14 @@ namespace SceneManagers
             // Canvas 하위의 모든 UI 요소들을 가져옵니다.
             Canvas canvas = FindObjectOfType<Canvas>();
             GraphicRaycaster[] raycasters = canvas.GetComponentsInChildren<GraphicRaycaster>();
-
             foreach (var raycaster in raycasters)
             {
                 raycaster.enabled = interactable;
             }
-
             // Modal 창은 항상 상호작용 가능하게 유지
             RoomOptionModal.GetComponent<GraphicRaycaster>().enabled = true;
+            RoomEnterModal.GetComponent<GraphicRaycaster>().enabled = true;
+            RoomDeniedModal.GetComponent<GraphicRaycaster>().enabled = true;
         }
         
     

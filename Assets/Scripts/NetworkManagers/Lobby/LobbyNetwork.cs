@@ -29,6 +29,9 @@ namespace NetworkManagers.Lobby
     {
         public event Action<ClientInfo> OnConnection;
         public event Action<ColyseusRoom<ChatRoomState>> OnChatRoomJoined;
+        public event Action<int> OnDisconnection;
+        public event Action<string> OnChatRoomPasswordError;
+        public event Action<string> OnChatRoomFull; 
         
         public ColyseusRoom<LobbyState> Lobby;
         public bool IsConnected = false;
@@ -56,9 +59,10 @@ namespace NetworkManagers.Lobby
                 Lobby.OnMessage<string>("NOT_AUTHENTICATED", message => OnNotAuthenticated(message, updateStatusMessage));
                 Lobby.OnMessage<ColyseusMatchMakeResponse>("CHAT_ROOM_CREATED", OnChatRoomCreated);
                 Lobby.OnMessage<ColyseusMatchMakeResponse>("CHAT_ROOM_AUTHORIZED", OnJoinChatRoomAuthorized);
-                Lobby.OnMessage<string>("CHAT_ROOM_PASSWORD_ERROR", message => Debug.LogError(message));
-                Lobby.OnMessage<string>("CHAT_ROOM_FULL", message => Debug.LogError(message));
+                Lobby.OnMessage<string>("CHAT_ROOM_PASSWORD_ERROR", message => OnChatRoomPasswordError?.Invoke(message));
+                Lobby.OnMessage<string>("CHAT_ROOM_FULL", message => OnChatRoomFull?.Invoke(message));
                 Lobby.OnMessage<string>("ERROR_MESSAGE", OnServerError);
+                Lobby.colyseusConnection.OnClose += OnDisconnected;
                 return await _connectionTask.Task;
             }
             catch (Exception exception)
@@ -95,6 +99,11 @@ namespace NetworkManagers.Lobby
             IsConnected = false;
             updateStatusMessage(message);
             _connectionTask.SetResult(false);
+        }
+
+        private void OnDisconnected(int closeCode)
+        {
+            OnDisconnection?.Invoke(closeCode);
         }
         
         public void CreateChatRoomRequest(Dictionary<string, object> roomOption)

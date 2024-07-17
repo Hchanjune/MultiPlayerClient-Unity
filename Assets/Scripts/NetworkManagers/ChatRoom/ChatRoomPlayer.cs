@@ -24,6 +24,9 @@ public partial class ChatRoomPlayer : Schema {
 	[Type(4, "string")]
 	public string team = default(string);
 
+	[Type(5, "boolean")]
+	public bool isReady = default(bool);
+
 	/*
 	 * Support for individual property change callbacks below...
 	 */
@@ -88,6 +91,18 @@ public partial class ChatRoomPlayer : Schema {
 		};
 	}
 
+	protected event PropertyChangeHandler<bool> __isReadyChange;
+	public Action OnIsReadyChange(PropertyChangeHandler<bool> __handler, bool __immediate = true) {
+		if (__callbacks == null) { __callbacks = new SchemaCallbacks(); }
+		__callbacks.AddPropertyCallback(nameof(this.isReady));
+		__isReadyChange += __handler;
+		if (__immediate && this.isReady != default(bool)) { __handler(this.isReady, default(bool)); }
+		return () => {
+			__callbacks.RemovePropertyCallback(nameof(isReady));
+			__isReadyChange -= __handler;
+		};
+	}
+
 	protected override void TriggerFieldChange(DataChange change) {
 		switch (change.Field) {
 			case nameof(lobbySessionId): __lobbySessionIdChange?.Invoke((string) change.Value, (string) change.PreviousValue); break;
@@ -95,6 +110,7 @@ public partial class ChatRoomPlayer : Schema {
 			case nameof(id): __idChange?.Invoke((string) change.Value, (string) change.PreviousValue); break;
 			case nameof(name): __nameChange?.Invoke((string) change.Value, (string) change.PreviousValue); break;
 			case nameof(team): __teamChange?.Invoke((string) change.Value, (string) change.PreviousValue); break;
+			case nameof(isReady): __isReadyChange?.Invoke((bool) change.Value, (bool) change.PreviousValue); break;
 			default: break;
 		}
 	}
